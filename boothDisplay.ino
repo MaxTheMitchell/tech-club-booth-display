@@ -51,8 +51,14 @@ void setup() {
 }
 
 void loop() {
+  logo();
+  toothpaste();
+  logo();
   curve();
-   for(int x=0; x<matrix_width; x++){
+}
+
+void logo(){
+  for(int x=0; x<matrix_width; x++){
     for(int y=0; y<matrix_width; y++){
       if(y % 2 == 0)
         display.drawPixel(x, y, LOGO[y*64+x]);
@@ -77,19 +83,54 @@ void loop() {
 
 void curve(){
   const int SIZE = 100;
-  for (int CURVES = 2; CURVES< 10; CURVES++){
+  float point[2];
+  for (int CURVES = 2; CURVES< 8; CURVES++){
+  display.clearDisplay();
   for(int i=0; i<SIZE; i++){
     float piSlice = PI * 2 * i / (float)SIZE;
-    float x = 31 * sin(piSlice);
-    float y = 31 * sin(piSlice) * cos(piSlice);
+    point[0] = 31 * sin(piSlice);
+    point[1] = 31 * sin(piSlice) * cos(piSlice);
     for(int c=0; c<CURVES; c++){
-      display.drawPixel((int)x + 31,(int)y + 31, WHITE);
-      float xx = x * cos(PI/CURVES) + y * sin(PI/CURVES);
-      y = y * cos(PI/CURVES) - x * sin(PI/CURVES);
-      x = xx;
+      display.drawPixel((int)point[0] + 31,(int)point[1] + 31, WHITE);
+      rotatePoint(point,PI/CURVES); 
     }
     delay(10 + CURVES );
   }
-  display.clearDisplay();
   }
+}
+
+void toothpaste(){
+  const int SIZE = 100;
+  const int CURVES = 20;
+  float point[2];
+  for(int i=0; i<SIZE; i++){
+    float piSlice = PI * 2 * i / (float)SIZE;
+    point[0] = 31 * sin(piSlice);
+    point[1] = 31 * sin(piSlice) * cos(piSlice);
+    for(int c=0; c<CURVES; c++){
+      display.drawPixel((int)point[0] + 31,(int)point[1] + 31, display.color565(255, 255, 255 * c / CURVES));
+      rotatePoint(point, (PI/4)/CURVES);
+    }
+    delay(15);
+  }
+  delay(300);
+  for(int i=0; i<SIZE; i++){
+    float piSlice = PI * 2 * i / (float)SIZE;
+    point[0] = 31 * sin(piSlice);
+    point[1] = 31 * sin(piSlice) * cos(piSlice);
+    rotatePoint(point, PI/2);
+    for(int c=0; c<CURVES; c++){
+      display.drawPixel((int)point[0] + 31,(int)point[1] + 31, display.color565(255 * c / CURVES, 255, 255));
+      rotatePoint(point, (PI/4)/CURVES);
+    }
+    delay(15);
+  }
+  delay(300);
+}
+
+float *rotatePoint(float *point, float rad){
+    float tmp = point[0] * cos(rad) + point[1] * sin(rad);
+    point[1] = point[1] * cos(rad) - point[0] * sin(rad);
+    point[0] = tmp;
+    return point;
 }
