@@ -14,6 +14,7 @@ portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 #define matrix_width 64
 #define matrix_height 64
 #define BLACK 0
+#define WHITE 65535
 
 // This defines the 'on' time of the display is us. The larger this number,
 // the brighter the display. If too large the ESP will crash
@@ -50,6 +51,7 @@ void setup() {
 }
 
 void loop() {
+  curve();
    for(int x=0; x<matrix_width; x++){
     for(int y=0; y<matrix_width; y++){
       if(y % 2 == 0)
@@ -69,7 +71,25 @@ void loop() {
     display.drawLine(x1,y1,x2,y1,BLACK);
     display.drawLine(x1,y2,x2,y2,BLACK);
     display.drawLine(x2,y1,x2,y2,BLACK);
-    delay(10);
+     delay(10);
    }
-    display.clearDisplay();
+}
+
+void curve(){
+  const int SIZE = 100;
+  for (int CURVES = 2; CURVES< 10; CURVES++){
+  for(int i=0; i<SIZE; i++){
+    float piSlice = PI * 2 * i / (float)SIZE;
+    float x = 31 * sin(piSlice);
+    float y = 31 * sin(piSlice) * cos(piSlice);
+    for(int c=0; c<CURVES; c++){
+      display.drawPixel((int)x + 31,(int)y + 31, WHITE);
+      float xx = x * cos(PI/CURVES) + y * sin(PI/CURVES);
+      y = y * cos(PI/CURVES) - x * sin(PI/CURVES);
+      x = xx;
+    }
+    delay(10 + CURVES );
+  }
+  display.clearDisplay();
+  }
 }
