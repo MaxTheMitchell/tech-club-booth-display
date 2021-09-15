@@ -51,10 +51,12 @@ void setup() {
 }
 
 void loop() {
+  gameOfLife();
   logo();
   toothpaste();
   logo();
   curve();
+  logo();
 }
 
 void logo(){
@@ -84,7 +86,7 @@ void logo(){
 void curve(){
   const int SIZE = 100;
   float point[2];
-  for (int CURVES = 2; CURVES< 8; CURVES++){
+  for (int CURVES = 2; CURVES< 10; CURVES*=2){
   display.clearDisplay();
   for(int i=0; i<SIZE; i++){
     float piSlice = PI * 2 * i / (float)SIZE;
@@ -128,9 +130,45 @@ void toothpaste(){
   delay(300);
 }
 
-float *rotatePoint(float *point, float rad){
+float *rotatePoint(float point[2], float rad){
     float tmp = point[0] * cos(rad) + point[1] * sin(rad);
     point[1] = point[1] * cos(rad) - point[0] * sin(rad);
     point[0] = tmp;
     return point;
+}
+
+void gameOfLife(){
+  bool grid[64][64];
+  for(int x=0; x<64; x++)
+    for(int y=0; y<64; y++)
+      grid[x][y] = ((x + y) % 2 == 0);
+  for(int i = 0; i<120 ; i++){
+     playRound(grid);
+     for(int x=0; x<64; x++) for(int y=0; y<64; y++) display.drawPixel(x, y, grid[x][y] ? WHITE : BLACK);    
+    delay(50);
+  }
+}
+ 
+bool newGrid[64][64]; // no idea why this has to be globaly scoped
+void playRound(bool grid[64][64]){
+  for(int x=0; x<64; x++) for(int y=0; y<64; y++) newGrid[x][y] = grid[x][y];
+  for(int x=0; x<64; x++) for(int y=0; y<64; y++) grid[x][y] = surviveGOL(x,y,newGrid);
+}
+
+bool surviveGOL(int x, int y, bool grid[64][64]){
+  int adj = adjGOL(x, y, grid);
+  return (adj == 3 || (grid[x][y] && adj == 4));
+}
+
+int adjGOL(int x, int y, bool grid[64][64]){
+  int count = 0;
+  for(int xx = -1; xx < 2; xx++)
+    for(int yy = -1; yy < 2; yy++)
+      if(inRange(xx+x) && inRange(yy+y) && grid[xx+x][yy+y])
+        count++;
+  return count;
+}
+
+bool inRange(int val){
+  return val >= 0 && val < 64;
 }
