@@ -16,6 +16,9 @@ portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 #define MAT_SIZE 64
 #define BLACK 0
 #define WHITE 65535
+#define RED display.color565(255,0,0)
+#define BLUE display.color565(0, 0,255)
+#define GREEN display.color565(0,255,0)
 
 // This defines the 'on' time of the display is us. The larger this number,
 // the brighter the display. If too large the ESP will crash
@@ -25,6 +28,8 @@ int grid[64][64];
 int newGrid[64][64]; // globaly scoped to save memory
 
 PxMATRIX display(64,64,P_LAT, P_OE,P_A,P_B,P_C,P_D,P_E);
+
+const uint16_t RGB[3] = {RED, GREEN, BLUE};
 
 void IRAM_ATTR display_updater(){
   // Increment the counter and set the time of ISR
@@ -53,8 +58,8 @@ void setup() {
   delay(4000);
 }
 
-const int ANIMATION_COUNT = 6;
-const function<void()> ANIMATIONS[ANIMATION_COUNT] = { &tree,  &wolfFrame, &toothpaste, &gameOfLife, &rockPaperSis, &curve };
+const int ANIMATION_COUNT = 7;
+const function<void()> ANIMATIONS[ANIMATION_COUNT] = {&astroid, &tree,  &wolfFrame, &toothpaste, &gameOfLife, &rockPaperSis, &curve };
 void loop() {
   times(ANIMATION_COUNT, [](int a) {
     logo();
@@ -86,7 +91,48 @@ void logo(){
    });
 }
 
+void ant(){
+  int ant[2] = {31, 31};
+  int dir[2] = {1, 0};
+  int tmp;
+  mapGrid(grid, []() -> int{ return 0; });
+  
+  while(1){
+    tmp = dir[1] * -1;
+    dir[1] = dir[0];
+    dir[0] = tmp;
+    if(grid[ant[0]][ant[1]]){
+      dir[0] *= -1;
+      dir[1] *= -1;
+    }
+    grid[ant[0]][ant[1]] = !grid[ant[0]][ant[1]];
+    ant[0] = (ant[0] + dir[0] + 64) % 64;
+    ant[1] = (ant[1] + dir[1] + 64) % 64;
+    forEachGrid(grid, [&](int val, int x, int y){ display.drawPixel(x, y, grid[x][y] ? WHITE : BLACK); });
+    display.drawPixel(ant[0], ant[1], RED );
+    delay(20);
+  }
+}
 
+void astroid(){
+  const int SIZE = 200;
+  const int AMOUNT = 5;
+  float point[2];
+  for(int b = 9; b > 0; b-=1)
+  for(int i=0; i<SIZE; i++){
+    float t = 2*PI*i/SIZE;
+    point[0] = 3*b*cos(t) + b*cos(3*t);
+    point[1] = 3*b*sin(t) - b*sin(3*t);
+    for(int n=0; n < AMOUNT; n++){
+      display.drawPixel(
+        (int) point[0] + 31,
+        (int) point[1] + 31,
+        RGB[b % 3]);
+      rotatePoint(point, PI*0.5/AMOUNT);
+    }
+    delay(10);
+  }
+}
 
 void tree(){
   branch(30, 63, 32, 0.5 * PI, 0);
@@ -113,7 +159,7 @@ void branch(float x, float y, int len, float rad, int darkness){
   if(len > 1){
     rotatePoint(point, rad);
     display.drawLine(x, y, x + point[0], y + point[1], display.color565(0 , darkness, 255));
-    delay(7);
+    delay(5);
     for(int i=-2; i<3; i++)
       branch(x + point[0], y + point[1], len * LEN_CUT, rad + ROTATION*i, darkness + 15);
   }
@@ -209,17 +255,7 @@ void rockPaperSis(){
   mapGrid(grid, []() -> int {return (int)random(3); });
   times(200, [](){
     forEachGrid(grid, [](int val, int x, int y){
-      switch(val){
-        case 0:
-          display.drawPixel(x, y, display.color565(255,0,0));
-          break;
-        case 1:
-          display.drawPixel(x, y, display.color565(0,255, 0));
-          break;
-        case 2:
-          display.drawPixel(x, y, display.color565(0,0, 255));
-          break;
-      }
+      display.drawPixel(x, y, RGB[val]);
     });
     copyToNewGrid();
     mapGrid(grid, [](int val, int x, int y) -> int{
